@@ -4,63 +4,63 @@ import (
     "net"
 )
 
-type Client interface {
-    Listen()
-    GetConnection() net.Conn
-    GetId() uint
+type client interface {
+    listen()
+    getConnection() net.Conn
+    getId() uint
 }
 
-type BasicClient struct {
-    ClientSocket net.Conn
-    OnClientDisconnected func (Client)
-    OnClientPacketReceieved func (Client, Packet) []byte
-    Id uint
+type basicClient struct {
+    clientSocket net.Conn
+    onClientDisconnected func (client)
+    onClientPacketReceieved func (client, packet) []byte
+    id uint
 }
 
-func NewClient(id uint, conn net.Conn, disconnectHandler func (Client), packetHandler func (Client, Packet) []byte) Client {
-    return BasicClient {
-        Id: id,
-        ClientSocket: conn,
-        OnClientDisconnected: disconnectHandler,
-        OnClientPacketReceieved: packetHandler,
+func newClient(id uint, conn net.Conn, disconnectHandler func (client), packetHandler func (client, packet) []byte) client {
+    return basicClient {
+        id: id,
+        clientSocket: conn,
+        onClientDisconnected: disconnectHandler,
+        onClientPacketReceieved: packetHandler,
     }
 }
 
-func (c BasicClient) Listen() {
+func (c basicClient) listen() {
+    defer c.clientSocket.Close()
+
     var packet [512]byte
     for {
         // will listen for message to process ending in newline (\n)
-        bytes, err := c.ClientSocket.Read(packet[0:])
+        bytes, err := c.clientSocket.Read(packet[0:])
         if err != nil {
-            c.OnClientDisconnected(c)
-            c.ClientSocket.Close()
+            c.onClientDisconnected(c)
             break
         }
 
-        response := c.OnClientPacketReceieved(c, NewRawPacket(packet[0 : ], uint(bytes)))
+        response := c.onClientPacketReceieved(c, newRawPacket(packet[0 : ], uint(bytes)))
         if response != nil {
-            _, err := c.ClientSocket.Write(response)
+            _, err := c.clientSocket.Write(response)
             if err != nil {
-                c.OnClientDisconnected(c)
-                c.ClientSocket.Close()
+                c.onClientDisconnected(c)
                 break
             }
         }
     }
 }
 
-func (c BasicClient) GetConnection() net.Conn {
-    return c.ClientSocket
+func (c basicClient) getConnection() net.Conn {
+    return c.clientSocket
 }
 
-func (c BasicClient) GetId() uint {
-    return c.Id
+func (c basicClient) getId() uint {
+    return c.id
 }
 
-func OnConduitPacketReceieved(socket Client, packet Packet) []byte {
+func onConduitPacketReceieved(socket client, packet packet) []byte {
     return []byte("READY FOR DATA")
 }
 
-func NewConduitClient(id uint, conn net.Conn, disconnectHandler func (c Client)) Client {
-    return NewClient(id, conn, disconnectHandler, OnConduitPacketReceieved)
+func newConduitClient(id uint, conn net.Conn, disconnectHandler func (c client)) client {
+    return newClient(id, conn, disconnectHandler, onConduitPacketReceieved)
 }

@@ -14,11 +14,15 @@ func main() {
   defer conn.Close()
 
   var packet [512]byte
-  conn.Write([]byte("Hello"))
+
+  for i := 0; i < 15; i++ {
+    conn.Write([]byte("Hello"))
+  }
 
   for {
     bytesRead, err := conn.Read(packet[0:])
     if err != nil {
+      log.Fatal(err)
       break
     }
 

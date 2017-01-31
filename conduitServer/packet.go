@@ -1,30 +1,26 @@
 package conduitServer
 
-import (
-
-)
-
-type Packet interface {
-    GetData() []byte
-    GetSize() uint
+type packet interface {
+    getData() []byte
+    getSize() uint
 }
 
-type RawPacket struct {
+type rawPacket struct {
     data []byte
     numBytes uint
 }
 
-func NewRawPacket(data []byte, length uint) RawPacket {
-    return RawPacket {
+func newRawPacket(data []byte, length uint) rawPacket {
+    return rawPacket {
         data: data,
         numBytes: length,
     }
 }
 
-func (p RawPacket) GetData() []byte {
+func (p rawPacket) getData() []byte {
     return p.data
 }
 
-func (p RawPacket) GetSize() uint {
+func (p rawPacket) getSize() uint {
     return p.numBytes
 }
